@@ -1,0 +1,1361 @@
+{
+  "name": "LinkedIn Otomasyonu",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -352,
+        -48
+      ],
+      "id": "ac53daec-3a6c-4df0-ab15-86d2690aabd4",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [
+                0,
+                3
+              ],
+              "triggerAtHour": 5
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -3984,
+        -704
+      ],
+      "id": "b5ebe4f3-a8a3-40c5-aa44-26783a907e5d",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "Bu haftanın yapay zeka gelişmelerini baz alarak bir LinkedIn postu oluşturmanı istiyorum. Amacın \"Haftanın en önemli 5 yapay zeka gelişmelerini\" paylaşmak. Oluşturduğun LinkedIn postunda orta düzey bir Türkçe kullanmanı istiyorum. Herkesin anlayabileceği bir bilgi düzeyinde yazmanı istiyorum. Yazının insansı gözükmesini istiyorum.\n\nYazı başına maksimum 700 karakteri aşmamaya çalış. YZ kısaltması yerine AI kısaltmasını kullan.\n\nKolay okunabilmesi için başlıklar ve maddeler arasına enter atmayı unutma. \n\nSadece LinkedIn'de paylaşılacak yazıyı çıktı olarak vermeni istiyorum. Başka hiçbir şey yazmanı istemiyorum.",
+        "options": {
+          "systemMessage": "=Bu haftanın yapay zeka gelişmeleri: \n{{ $json.choices[0].message.content }}\n\nDate: {{new Date().toISOString()}}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -3456,
+        -704
+      ],
+      "id": "050df5bf-6440-42fe-9489-a5a99c3fbab8",
+      "name": "Post Yazarı"
+    },
+    {
+      "parameters": {
+        "inputText": "={{ $json.data.text }}",
+        "categories": {
+          "categories": [
+            {
+              "category": "onayladi",
+              "description": "Kullanıcı onay verdi. Hem metin hem görselden memnun. "
+            },
+            {
+              "category": "metin_onay_yok",
+              "description": "Sadece metin için değişiklik/eleştiri var (örn. kısalt, yeniden yaz, tonu değiştir). Görsel hakkında değişiklik talebi yoksa bu etiketi seç"
+            },
+            {
+              "category": "gorsel_onay_yok",
+              "description": "Sadece görsel için değişiklik/eleştiri var (örn. daha minimal, renkleri değiştir, tipografi/kompozisyon). Metin hakkında değişiklik talebi yoksa bu etiketi seç. Asla seçme: Kullanıcı hem metin hem görsel için değişiklik istiyorsa (o durumda hem_metin_hem_gorsel_onay_yok)."
+            },
+            {
+              "category": "hem_metin_hem_gorsel_onay_yok",
+              "description": "Hem metin hem görsel için değişiklik talebi var (örn. ‘metni kısalt, görseli minimal yap’). Kilit kural: Bu koşul sağlanıyorsa yalnızca bu etiketi seç; diğer etiketleri seçme."
+            }
+          ]
+        },
+        "options": {
+          "multiClass": false,
+          "enableAutoFixing": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.textClassifier",
+      "typeVersion": 1.1,
+      "position": [
+        -1936,
+        -736
+      ],
+      "id": "677f8d25-fdfc-4e32-b54b-3ce3347b9e59",
+      "name": "Onay Verdi Mi?"
+    },
+    {
+      "parameters": {
+        "operation": "sendAndWait",
+        "chatId": "CHAT_ID_NİZİ_EKLEYİN",
+        "message": "=İşte bugünkü LinkedIn postunuz:\n-----------------------\n\n{{ $('Post Yazarı').item.json.output }}\n\n-----------------------\nOnaylıyor musun?",
+        "responseType": "freeText",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -2144,
+        -704
+      ],
+      "id": "5d6518c2-a41b-49c7-b7cf-97e48b51a842",
+      "name": "Onayını Al",
+      "webhookId": "16f0999b-e29c-4661-9f69-72e2c7481d52"
+    },
+    {
+      "parameters": {
+        "messages": {
+          "message": [
+            {
+              "content": "=Find the latest AI news of this week. Make sure that these events belog to this month. Summarize what's happening.\n\nCurrent Date: {{ $json['Readable date'] }}"
+            }
+          ]
+        },
+        "options": {},
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-base.perplexity",
+      "typeVersion": 1,
+      "position": [
+        -3680,
+        -704
+      ],
+      "id": "a30af01e-e086-4994-bc33-3f9511c55e8b",
+      "name": "AI Haberleri"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -1584,
+        144
+      ],
+      "id": "14855964-4fde-40d9-89a0-7bc61937345b",
+      "name": "ChatGPT 4.1"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -1936,
+        -512
+      ],
+      "id": "21cf7c67-a0da-4e18-b5cd-b685e9de9265",
+      "name": "ChatGPT 4.1 mini"
+    },
+    {
+      "parameters": {
+        "person": "CBejrkiS2a",
+        "text": "={{ $('Post Yazarı').item.json.output }}",
+        "shareMediaCategory": "IMAGE",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.linkedIn",
+      "typeVersion": 1,
+      "position": [
+        -1168,
+        -1296
+      ],
+      "id": "15b06470-0097-4527-9021-70afcbb0a9dc",
+      "name": "Create a post"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Aşağıdaki LinkedIn postuna bakarak bu LinkedIn postu için bir görsel prompt üretmeni istiyorum. Bu görsel promptunu GPT-1 Image modelini kullanarak üreteceğim için bu modele uygun bir görsel prompt yazmanı istiyorum. Çok fazla gereksiz detay olmasın; sadece en önemli bölümler hakkında key highlight'ların bulunduğu bir görsel olması yeterli. Sadece prompt çıktısını ver, başka bir şey yazma. Türkçe dilinde olacak her şey. Görselin estetik olarak bir ahenk içinde olduğundan emin ol. \n\nMinimalist bir tasarım kullandım.\n\nLINKEDIN POSTU: \n {{ $json.output }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        -3104,
+        -704
+      ],
+      "id": "93d66d12-1fcd-4e15-8379-c1873040f8ec",
+      "name": "Gorsel Prompt Yazarı"
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "model": "gpt-image-1",
+        "prompt": "={{ $json.message.content }}",
+        "options": {
+          "quality": "high",
+          "size": "1024x1024"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        -2768,
+        -704
+      ],
+      "id": "83ea8cf7-afa9-44cc-9e95-000062fc1fb5",
+      "name": "Gorsel Olusturucu"
+    },
+    {
+      "parameters": {
+        "operation": "sendPhoto",
+        "chatId": "CHAT_ID_NİZİ_EKLEYİN",
+        "binaryData": true,
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -2544,
+        -704
+      ],
+      "id": "39549406-e04d-42dd-884b-6fe6b34dfb69",
+      "name": "Gorselı At",
+      "webhookId": "279709d1-6d47-4fb0-8dba-8356276d6a93"
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "model": "gpt-image-1",
+        "prompt": "={{ $json.output }}",
+        "options": {
+          "quality": "high",
+          "size": "1024x1024"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        -1056,
+        -528
+      ],
+      "id": "8fc442ea-0e3a-4c42-9740-89aed1bdb17b",
+      "name": "Gorsel Olusturucu1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Kullanıcı için bir LinkedIn postu yazıldı. Yazılan LinkedIn postu: \n {{ $('Post Yazarı').item.json.output }}\n\nFakat kullanıcı bu LinkedIn postunu beğenmedi ve şu feedback'i verdi: {{ $('Onayını Al').item.json.data.text }}\n\nVerilen feedback çerçevesinde LinkedIn postunu yeniden yaz ve çıktı olarak sadece paylaşılabilecek postu ver başka hiçbir şey yazmanı istemiyorum.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -1408,
+        -912
+      ],
+      "id": "c1f5447e-e56d-4794-83dd-815d6e98ba08",
+      "name": "Metin Revize Agent"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Kullanıcı için bir LinkedIn postu görseli oluşturuldu. Yazılan LinkedIn postu görselinin prompt'u: \n{{ $('Gorsel Prompt Yazarı').item.json.message.content }}\n\nFakat kullanıcı bu LinkedIn postunu beğenmedi ve şu feedback'i verdi: {{ $('Onayını Al').item.json.data.text }}\n\nVerilen feedback çerçevesinde LinkedIn postu görseli prompt'unu yeniden yaz ve çıktı olarak sadece paylaşılabilecek prompt'u ver başka hiçbir şey yazmanı istemiyorum.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -1408,
+        -528
+      ],
+      "id": "66ad402e-f4ed-410b-8a34-ea84872a984d",
+      "name": "Görsel Revize Agent"
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "model": "gpt-image-1",
+        "prompt": "={{ $json.output }}",
+        "options": {
+          "quality": "high",
+          "size": "1024x1024"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        -800,
+        -144
+      ],
+      "id": "9432668f-f54e-4618-982e-7bb22016066b",
+      "name": "Gorsel Olusturucu2"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Kullanıcı için bir LinkedIn postu yazıldı. Yazılan LinkedIn postu: \n {{ $('Post Yazarı').item.json.output }}\n\nFakat kullanıcı bu LinkedIn postunu beğenmedi ve şu feedback'i verdi: {{ $('Onayını Al').item.json.data.text }}\n\nVerilen feedback çerçevesinde LinkedIn postunu yeniden yaz ve çıktı olarak sadece paylaşılabilecek postu ver başka hiçbir şey yazmanı istemiyorum.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -1408,
+        -144
+      ],
+      "id": "8a7a8ce3-e8c1-4bc2-a9de-d9e9487cecee",
+      "name": "Metin Revize Agent 2"
+    },
+    {
+      "parameters": {
+        "amount": 3
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -2336,
+        -704
+      ],
+      "id": "c7a8cd33-6157-440c-a795-c06e068d6082",
+      "name": "Wait",
+      "webhookId": "9d58be00-c537-401a-bab6-73dd7d18dcc1"
+    },
+    {
+      "parameters": {
+        "operation": "sendAndWait",
+        "chatId": "CHAT_ID_NİZİ_EKLEYİN",
+        "message": "=İşte bugünkü LinkedIn postunuz:\n-----------------------\n\n{{ $('Post Yazarı').item.json.output }}\n\n-----------------------\nOnaylıyor musun?",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -208,
+        -656
+      ],
+      "id": "b2172c47-8ddc-41b4-bbaf-c38bdbcfb506",
+      "name": "Onayını Al3",
+      "webhookId": "16f0999b-e29c-4661-9f69-72e2c7481d52"
+    },
+    {
+      "parameters": {
+        "operation": "sendPhoto",
+        "chatId": "CHAT_ID_NİZİ_EKLEYİN",
+        "binaryData": true,
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -608,
+        -656
+      ],
+      "id": "4a2846df-4a14-4afb-9bfb-01490539d160",
+      "name": "Gorselı At3",
+      "webhookId": "279709d1-6d47-4fb0-8dba-8356276d6a93"
+    },
+    {
+      "parameters": {
+        "amount": 3
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -400,
+        -656
+      ],
+      "id": "18000b12-51d9-49d5-b01c-6bcb2c108d6d",
+      "name": "Wait3",
+      "webhookId": "9d58be00-c537-401a-bab6-73dd7d18dcc1"
+    },
+    {
+      "parameters": {
+        "operation": "sendAndWait",
+        "chatId": "CHAT_ID_NİZİ_EKLEYİN",
+        "message": "=İşte bugünkü LinkedIn postunuz:\n-----------------------\n\n{{ \n  $json.output \n  || ($items(\"Metin Revize Agent\")?.[0]?.json?.output) \n  || ($items(\"Post Yazarı\")?.[0]?.json?.output) \n}}\n\n-----------------------\nOnaylıyor musun?",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -208,
+        -1040
+      ],
+      "id": "984f2a24-036b-4ef4-8444-6392053dcc7b",
+      "name": "Onayını Al4",
+      "webhookId": "16f0999b-e29c-4661-9f69-72e2c7481d52"
+    },
+    {
+      "parameters": {
+        "operation": "sendPhoto",
+        "chatId": "CHAT_ID_NİZİ_EKLEYİN",
+        "binaryData": true,
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -608,
+        -1040
+      ],
+      "id": "db6ba3eb-8df6-42c3-8ad6-02db6f731932",
+      "name": "Gorselı At4",
+      "webhookId": "279709d1-6d47-4fb0-8dba-8356276d6a93"
+    },
+    {
+      "parameters": {
+        "amount": 3
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -400,
+        -1040
+      ],
+      "id": "1387e4cb-4230-4e41-ad1a-c9fa1c1eb91c",
+      "name": "Wait4",
+      "webhookId": "9d58be00-c537-401a-bab6-73dd7d18dcc1"
+    },
+    {
+      "parameters": {
+        "operation": "sendAndWait",
+        "chatId": "CHAT_ID_NİZİ_EKLEYİN",
+        "message": "=İşte bugünkü LinkedIn postunuz:\n-----------------------\n\n{{ $('Metin Revize Agent 2').item.json.output }}\n\n-----------------------\nOnaylıyor musun?",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -208,
+        -272
+      ],
+      "id": "1e3fd64a-b0ba-461e-98ed-1c70bc4ac999",
+      "name": "Onayını Al5",
+      "webhookId": "16f0999b-e29c-4661-9f69-72e2c7481d52"
+    },
+    {
+      "parameters": {
+        "operation": "sendPhoto",
+        "chatId": "CHAT_ID_NİZİ_EKLEYİN",
+        "binaryData": true,
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -608,
+        -272
+      ],
+      "id": "6c8af0de-f1a1-4bd4-9487-4b270297bb5c",
+      "name": "Gorselı At5",
+      "webhookId": "279709d1-6d47-4fb0-8dba-8356276d6a93"
+    },
+    {
+      "parameters": {
+        "amount": 3
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -400,
+        -272
+      ],
+      "id": "d7b13519-4c90-404c-9942-59d57c32b4bc",
+      "name": "Wait5",
+      "webhookId": "9d58be00-c537-401a-bab6-73dd7d18dcc1"
+    },
+    {
+      "parameters": {
+        "person": "CBejrkiS2a",
+        "text": "={{ $('Post Yazarı').item.json.output }}",
+        "shareMediaCategory": "IMAGE",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.linkedIn",
+      "typeVersion": 1,
+      "position": [
+        192,
+        -544
+      ],
+      "id": "5916fb9e-c0f6-42ee-8a17-b8df0d760427",
+      "name": "Create a post1"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        0,
+        -544
+      ],
+      "id": "0e753a18-1f33-4d31-a7cd-c32c9605b434",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "person": "CBejrkiS2a",
+        "text": "={{ $('Post Yazarı').item.json.output }}",
+        "shareMediaCategory": "IMAGE",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.linkedIn",
+      "typeVersion": 1,
+      "position": [
+        192,
+        -160
+      ],
+      "id": "e0afbebd-cc6a-4ee1-93a9-bbcbdf3e48bc",
+      "name": "Create a post2"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        0,
+        -160
+      ],
+      "id": "16a9044a-e445-4ce1-bc3b-134f2f4f6334",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "person": "CBejrkiS2a",
+        "text": "={{ $('Metin Revize Agent').item.json.output }}",
+        "shareMediaCategory": "IMAGE",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.linkedIn",
+      "typeVersion": 1,
+      "position": [
+        224,
+        -912
+      ],
+      "id": "128b13c0-f79b-4e93-bca4-93c6d1d29258",
+      "name": "Create a post3"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -864,
+        -896
+      ],
+      "id": "4593136e-b844-4d84-8cce-6dc2b776fea6",
+      "name": "Merge3"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        0,
+        -912
+      ],
+      "id": "a72a373e-5344-4d76-a18a-df4def6ab4b5",
+      "name": "Merge2"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -1392,
+        -1296
+      ],
+      "id": "3843d85a-dc53-471a-8940-b1a90f3e1705",
+      "name": "Merge4"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Kullanıcı için bir LinkedIn postu görseli oluşturuldu. Yazılan LinkedIn postu görselinin prompt'u: \n{{ $('Gorsel Prompt Yazarı').item.json.message.content }}\n\nFakat kullanıcı bu LinkedIn postunu beğenmedi ve şu feedback'i verdi: {{ $('Onayını Al').item.json.data.text }}\n\nVerilen feedback çerçevesinde LinkedIn postu görseli prompt'unu yeniden yaz ve çıktı olarak sadece paylaşılabilecek prompt'u ver başka hiçbir şey yazmanı istemiyorum.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -1104,
+        -144
+      ],
+      "id": "e44b2ba0-61ba-445b-aa6b-f1c90c93ec09",
+      "name": "Görsel Revize Agent 2"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -3456,
+        -512
+      ],
+      "id": "54acf8c4-8268-46d0-b281-0d49512461e5",
+      "name": "ChatGPT 4. 1"
+    },
+    {
+      "parameters": {
+        "content": "# Revize yok",
+        "height": 336,
+        "width": 512,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1456,
+        -1440
+      ],
+      "typeVersion": 1,
+      "id": "7bec7df5-ab35-4edc-ae4f-373dad2d4b69",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "# Metni revize et ve paylaş",
+        "height": 336,
+        "width": 1840,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1456,
+        -1056
+      ],
+      "typeVersion": 1,
+      "id": "3dd428ac-57bf-42b7-91e0-bf59ab8e6703",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "# Görseli revize et ve paylaş",
+        "height": 336,
+        "width": 1840,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1456,
+        -672
+      ],
+      "typeVersion": 1,
+      "id": "30ac20e8-cf14-4443-89e5-dd15048f970a",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "# Metni ve görseli revize et ve paylaş",
+        "height": 336,
+        "width": 1840,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1456,
+        -288
+      ],
+      "typeVersion": 1,
+      "id": "a6ee42b7-5bd8-4854-ac6b-e63d04c4ad67",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "# Post Yazarı",
+        "height": 432,
+        "width": 288,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -3488,
+        -800
+      ],
+      "typeVersion": 1,
+      "id": "ca8d7671-c9b9-44db-a52a-f182d84bed74",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "# Görsel Oluşturucu",
+        "height": 432,
+        "width": 560
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -3168,
+        -800
+      ],
+      "typeVersion": 1,
+      "id": "b3d5202c-7a93-4aa7-930e-d3a59019bad4",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "content": "# Araştırmacı",
+        "height": 432,
+        "width": 224,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -3744,
+        -800
+      ],
+      "typeVersion": 1,
+      "id": "04d032f8-ede7-4e4e-8a12-809cd0956a5d",
+      "name": "Sticky Note6"
+    },
+    {
+      "parameters": {
+        "content": "# Onay & Revize Asistanı",
+        "height": 432,
+        "width": 1056,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -2576,
+        -800
+      ],
+      "typeVersion": 1,
+      "id": "8af8bb75-021a-46f1-886e-99cb8a652577",
+      "name": "Sticky Note7"
+    },
+    {
+      "parameters": {
+        "content": "# Her Hafta Çalıştır",
+        "height": 432,
+        "width": 336,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -4112,
+        -800
+      ],
+      "typeVersion": 1,
+      "id": "0c5957e9-7c72-4fa5-9e69-40a72c307d50",
+      "name": "Sticky Note8"
+    },
+    {
+      "parameters": {
+        "content": "## Tetikleyici Sıklığını Ayarlayın\n\nNe sıklıkta post paylaşmak istediğinizi seçin.",
+        "height": 336,
+        "width": 208,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -4048,
+        -1152
+      ],
+      "typeVersion": 1,
+      "id": "8ddf0180-7b62-49f8-8b84-52022c283886",
+      "name": "Sticky Note9"
+    },
+    {
+      "parameters": {
+        "content": "## Konu Seçin\n\nAşağıdaki node'un prompt kısmı yapay zeka haberlerini çekecek şekilde tasarlanmıştır. Prompt'u düzenleyerek dilediğiniz konuyu seçebilirsiniz.",
+        "height": 336,
+        "width": 224,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -3744,
+        -1152
+      ],
+      "typeVersion": 1,
+      "id": "6673c527-3780-4c88-aeca-3e257c8f76dc",
+      "name": "Sticky Note10"
+    },
+    {
+      "parameters": {
+        "content": "## Postunuzu Kişiselleştirin\n\nAşağıdaki Agent'ın prompt kısmı yapay zeka haberlerine bakarak yapay zeka haberleri üretecek şekilde tasarlanmıştır. \n\nPrompt'u düzenleyerek dilediğiniz gibi şekillendirebilirsiniz.",
+        "height": 336,
+        "width": 224,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -3456,
+        -1152
+      ],
+      "typeVersion": 1,
+      "id": "13717ff1-5d7d-418f-8f86-a19eabcada79",
+      "name": "Sticky Note11"
+    },
+    {
+      "parameters": {
+        "content": "## Görselinizi Kişiselleştirin\n\nAşağıdaki Agent'ın prompt kısmı önceki aşamadaki post yazarının ürettiği metne göre ilgili görseli üretecek şekilde tasarlanmıştır. \n\nPrompt'u düzenleyerek dilediğiniz gibi şekillendirebilirsiniz.",
+        "height": 336,
+        "width": 224
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -3104,
+        -1152
+      ],
+      "typeVersion": 1,
+      "id": "4ba76046-8479-4995-bd41-4b131f4f0c30",
+      "name": "Sticky Note12"
+    },
+    {
+      "parameters": {
+        "content": "## Telegram Asistanı Oluşturun ve Bağlayın\n\n1. Telegram'ı açın ve arama kısmına BotFather yazın.\n2. Botfather ile chat'leşerek botunuzu oluşturun ve API anahtarınızı alın.\n3. Yukarıdaki node'u aktive edin, sonrasında:\na) Telegram hesabınızı bağlayın\nb) Botunuza mesaj atarak chat ID'nizi alın\n4. Aşağıdaki node'ları açın ve bağladığınız Telegram hesabını seçin",
+        "height": 336,
+        "width": 400,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -2528,
+        -1152
+      ],
+      "typeVersion": 1,
+      "id": "00ba1290-59af-427d-916f-67a7bb71c7ff",
+      "name": "Sticky Note13"
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -2384,
+        -1344
+      ],
+      "id": "951a8010-e985-42e8-bf85-beb05bfeab94",
+      "name": "Telegram Trigger",
+      "webhookId": "e8483208-e330-4ed8-bbe7-ec87e803f18e",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "content": "## ChatGPT Hesabınızı Bağlayın\n\n1. platform.openai.com'a gidin\n2. Ücretsiz üye olun\n3. Ayarlar > Billing kısmından bakiye yükleyin\n4. Ayalar > API Keys kısmından API alın",
+        "height": 336,
+        "width": 224,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -3456,
+        -352
+      ],
+      "typeVersion": 1,
+      "id": "820a706d-e863-4b10-9f11-70de979a122a",
+      "name": "Sticky Note14"
+    },
+    {
+      "parameters": {
+        "content": "## LinkedIn Hesabınızı Bağlayın\n\n1. LinkedIn node'unu açın, \"Create new credential\" butonuna basın. Bu sayfa açık kalsın.\n2. developer.linkedin.com'a gidin. \"Create App\" butonuna basın ve gerekli bilgileri doldurun. (Eğer bir LinkedIn sayfanız yoksa oluşturmanız gerekiyor, kendi hesabınızda paylaşım yapmak isteyebilirsiniz fakat yinede sayfa açılmadan API alamıyoruz maalesef o yüzden boş dahi olsa sayfa şart).\n3. Artık \"My Apps\" kısmında oluşturduğunuz app'i görebilirsiniz. Buradan app'inizi seçin, \"Products\" sekmesine gidin. Aşağıdakileri aktifleşirin.\na) Share on LinkedIn\nb) Sign In with LinkedIn using OpenID Connect\n4. Auth sekmesine gidin, \na) Client ID'yi ve Primary Client Secret'ı kopyalayıp, n8n'deki LinkedIn node'unuza yapıştırın. \nb) n8n LinkedIn node'undaki \"OAuth Redirect URL\"yi kopyalayın ve LinkedIn'deki \"Authorized redirect URLs for your app\" kısnmına yapıştırın.\nc) n8n'ye geri dönün. \"Organization Support\" ve \"Legacy\"yi kapatın. Ve LinkedIn hesabınızla giriş yapın.",
+        "height": 336,
+        "width": 1296,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -912,
+        -1440
+      ],
+      "typeVersion": 1,
+      "id": "b0dc00c1-9322-4693-b1b7-68c377b1d365",
+      "name": "Sticky Note15"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -2304,
+        0
+      ],
+      "id": "4b0ccf33-b9ce-4aeb-9eca-a19019261e18",
+      "name": "Sticky Note16"
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Haberleri",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Yazarı": {
+      "main": [
+        [
+          {
+            "node": "Gorsel Prompt Yazarı",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Onay Verdi Mi?": {
+      "main": [
+        [
+          {
+            "node": "Merge4",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Metin Revize Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Görsel Revize Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Metin Revize Agent 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Onayını Al": {
+      "main": [
+        [
+          {
+            "node": "Onay Verdi Mi?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Haberleri": {
+      "main": [
+        [
+          {
+            "node": "Post Yazarı",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ChatGPT 4.1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Metin Revize Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Görsel Revize Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Metin Revize Agent 2",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Görsel Revize Agent 2",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ChatGPT 4.1 mini": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Onay Verdi Mi?",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gorsel Prompt Yazarı": {
+      "main": [
+        [
+          {
+            "node": "Gorsel Olusturucu",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gorsel Olusturucu": {
+      "main": [
+        [
+          {
+            "node": "Gorselı At",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge3",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "Merge4",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Gorselı At": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gorsel Olusturucu1": {
+      "main": [
+        [
+          {
+            "node": "Gorselı At3",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Metin Revize Agent": {
+      "main": [
+        [
+          {
+            "node": "Merge3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Görsel Revize Agent": {
+      "main": [
+        [
+          {
+            "node": "Gorsel Olusturucu1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Metin Revize Agent 2": {
+      "main": [
+        [
+          {
+            "node": "Görsel Revize Agent 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Onayını Al",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gorselı At3": {
+      "main": [
+        [
+          {
+            "node": "Wait3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait3": {
+      "main": [
+        [
+          {
+            "node": "Onayını Al3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gorselı At4": {
+      "main": [
+        [
+          {
+            "node": "Wait4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait4": {
+      "main": [
+        [
+          {
+            "node": "Onayını Al4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gorselı At5": {
+      "main": [
+        [
+          {
+            "node": "Wait5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait5": {
+      "main": [
+        [
+          {
+            "node": "Onayını Al5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gorsel Olusturucu2": {
+      "main": [
+        [
+          {
+            "node": "Gorselı At5",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Onayını Al3": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Create a post1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Create a post2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Onayını Al5": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Onayını Al4": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge3": {
+      "main": [
+        [
+          {
+            "node": "Gorselı At4",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge2": {
+      "main": [
+        [
+          {
+            "node": "Create a post3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge4": {
+      "main": [
+        [
+          {
+            "node": "Create a post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Görsel Revize Agent 2": {
+      "main": [
+        [
+          {
+            "node": "Gorsel Olusturucu2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ChatGPT 4. 1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Post Yazarı",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "staticData": null,
+  "pinData": {},
+  "triggerCount": 0,
+  "meta": null
+}
